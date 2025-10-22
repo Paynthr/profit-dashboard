@@ -98,6 +98,21 @@ const ProfitabilityAuditDashboard = () => {
     return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   };
 
+  // Helper function to determine cost bar color
+  const getCostBarColor = (costType, percentage) => {
+    const thresholds = {
+      labor: 20,      // >20% is bad
+      software: 5,    // >5% is bad
+      marketing: 10,  // >10% is bad
+      materials: 40,  // >40% is bad
+      rentUtilities: 15, // >15% is bad
+      other: 10       // >10% is bad
+    };
+    
+    const threshold = thresholds[costType] || 15;
+    return percentage > threshold ? 'bg-red-500' : 'bg-green-500';
+  };
+
   const tabs = [
     { id: 'overview', label: 'Overview', icon: BarChart3 },
     { id: 'costs', label: 'Where Money Goes', icon: PieChart },
@@ -164,7 +179,7 @@ const ProfitabilityAuditDashboard = () => {
                     onClick={() => setActiveTab(tab.id)}
                     className={`flex items-center gap-2 px-6 py-4 font-medium text-sm whitespace-nowrap transition-colors ${
                       activeTab === tab.id
-                        ? 'text-blue-600 bg-blue-600 text-white'
+                        ? 'text-white bg-blue-600'
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                     }`}
                   >
@@ -191,6 +206,8 @@ const ProfitabilityAuditDashboard = () => {
                       You have <span className="font-bold text-white">{formatCurrency(data.totalImpact)}</span> in annual profit sitting on the table through {data.actions?.length || 0} fixable issues. 
                       {data.profitMargin > 50 ? (
                         <span> With your excellent {data.profitMargin.toFixed(1)}% margin, these strategic optimizations will unlock even more profit potential.</span>
+                      ) : data.profitMargin < 0 ? (
+                        <span> With the right moves, we can turn your business profitable and achieve a {data.targetMargin}% profit margin in 90 days.</span>
                       ) : (
                         <span> With the right moves, we can increase your profit margin from{' '}
                         <span className="font-bold text-white">{data.profitMargin.toFixed(1)}%</span> to{' '}
@@ -225,15 +242,21 @@ const ProfitabilityAuditDashboard = () => {
                   <p className="text-xs text-gray-500 mt-1">Monthly</p>
                 </div>
 
-                <div className="bg-white rounded-xl border border-gray-200 p-6">
+                <div className={`rounded-xl border border-gray-200 p-6 ${
+                  data.netProfit < 0 ? 'bg-red-50' : 'bg-green-50'
+                }`}>
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="bg-green-50 p-2 rounded-lg">
-                      <TrendingUp className="w-5 h-5 text-green-600" />
+                    <div className={`p-2 rounded-lg ${data.netProfit < 0 ? 'bg-red-100' : 'bg-green-100'}`}>
+                      <TrendingUp className={`w-5 h-5 ${data.netProfit < 0 ? 'text-red-600' : 'text-green-600'}`} />
                     </div>
                     <p className="text-sm font-medium text-gray-600">Current Profit</p>
                   </div>
-                  <p className="text-3xl font-bold text-green-600">{formatCurrency(data.netProfit)}</p>
-                  <p className="text-sm font-semibold text-green-600 mt-1">{data.profitMargin.toFixed(1)}% margin</p>
+                  <p className={`text-3xl font-bold ${data.netProfit < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                    {formatCurrency(data.netProfit)}
+                  </p>
+                  <p className={`text-sm font-semibold mt-1 ${data.netProfit < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                    {data.profitMargin.toFixed(1)}% margin
+                  </p>
                 </div>
 
                 <div className="bg-white rounded-xl border border-gray-200 p-6">
@@ -295,22 +318,26 @@ const ProfitabilityAuditDashboard = () => {
               <h3 className="text-xl font-bold text-gray-900 mb-6 print:block hidden">Where Money Goes</h3>
               <div className="space-y-3">
                 {Object.entries(data.costs).map(([key, value]) => {
-                  const percentage = data.revenue > 0 ? (value / data.revenue * 100).toFixed(1) : 0;
+                  const percentage = data.revenue > 0 ? (value / data.revenue * 100) : 0;
+                  const barColor = getCostBarColor(key, percentage);
+                  const bgColor = barColor === 'bg-red-500' ? 'bg-red-50' : 'bg-green-50';
+                  const borderColor = barColor === 'bg-red-500' ? 'border-red-200' : 'border-green-200';
+                  
                   return (
-                    <div key={key} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <div key={key} className={`${bgColor} p-4 rounded-lg border ${borderColor}`}>
                       <div className="flex justify-between items-center mb-2">
-                        <span className="font-medium text-gray-700 capitalize">
+                        <span className="font-semibold text-gray-900 capitalize">
                           {key === 'rentUtilities' ? 'Rent & Utilities' : key}
                         </span>
                         <span className="font-bold text-gray-900">{formatCurrency(value)}</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2.5">
                         <div
-                          className="bg-blue-600 h-2.5 rounded-full transition-all"
-                          style={{ width: `${Math.min(percentage, 100)}%` }}
+                          className={`${barColor} h-2.5 rounded-full transition-all`}
+                          style={{ width: `${Math.min(percentage.toFixed(1), 100)}%` }}
                         />
                       </div>
-                      <p className="text-xs text-gray-500 mt-1">{percentage}% of revenue</p>
+                      <p className="text-xs text-gray-600 mt-1">{percentage.toFixed(1)}% of revenue</p>
                     </div>
                   );
                 })}
@@ -323,36 +350,45 @@ const ProfitabilityAuditDashboard = () => {
             <div className="p-6 sm:p-8">
               <h3 className="text-xl font-bold text-gray-900 mb-6 print:block hidden">Service Profitability</h3>
               <div className="space-y-4">
-                {data.services.map((service, idx) => (
-                  <div key={idx} className="border-2 border-gray-200 rounded-xl p-6">
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h4 className="text-lg font-bold text-gray-900 mb-2">{service.name}</h4>
-                        <p className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
-                          service.status === 'excellent' ? 'bg-green-100 text-green-700' :
-                          service.status === 'good' ? 'bg-blue-100 text-blue-700' :
-                          'bg-yellow-100 text-yellow-700'
-                        }`}>
-                          {service.margin.toFixed(1)}% margin
-                        </p>
+                {data.services.map((service, idx) => {
+                  const cardBgColor = service.status === 'excellent' ? 'bg-green-50' : 
+                                     service.status === 'good' ? 'bg-blue-50' : 'bg-yellow-50';
+                  const cardBorderColor = service.status === 'excellent' ? 'border-green-200' : 
+                                         service.status === 'good' ? 'border-blue-200' : 'border-yellow-200';
+                  
+                  return (
+                    <div key={idx} className={`${cardBgColor} border-2 ${cardBorderColor} rounded-xl p-6`}>
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <h4 className="text-lg font-bold text-gray-900 mb-2">{service.name}</h4>
+                          <p className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
+                            service.status === 'excellent' ? 'bg-green-200 text-green-800' :
+                            service.status === 'good' ? 'bg-blue-200 text-blue-800' :
+                            'bg-yellow-200 text-yellow-800'
+                          }`}>
+                            {service.margin.toFixed(1)}% margin
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-2xl font-bold text-gray-900">{formatCurrency(service.revenue)}</p>
+                          <p className="text-sm text-gray-600">monthly revenue</p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-bold text-gray-900">{formatCurrency(service.revenue)}</p>
-                        <p className="text-sm text-gray-500">monthly revenue</p>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-white p-3 rounded-lg border border-gray-200">
+                          <p className="text-xs text-gray-600 mb-1">Cost</p>
+                          <p className="text-lg font-bold text-gray-900">{formatCurrency(service.cost)}</p>
+                        </div>
+                        <div className="bg-white p-3 rounded-lg border border-gray-200">
+                          <p className="text-xs text-gray-600 mb-1">Profit</p>
+                          <p className={`text-lg font-bold ${service.revenue - service.cost >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                            {formatCurrency(service.revenue - service.cost)}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-gray-50 p-3 rounded-lg">
-                        <p className="text-xs text-gray-600 mb-1">Cost</p>
-                        <p className="text-lg font-bold text-gray-900">{formatCurrency(service.cost)}</p>
-                      </div>
-                      <div className="bg-green-50 p-3 rounded-lg">
-                        <p className="text-xs text-green-700 mb-1">Profit</p>
-                        <p className="text-lg font-bold text-green-700">{formatCurrency(service.revenue - service.cost)}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -384,8 +420,7 @@ const ProfitabilityAuditDashboard = () => {
                           {action.step}
                         </div>
                         <div className="flex-1">
-                          <h4 className="text-xl font-bold text-gray-900 mb-2">{action.title}</h4>
-                          <p className="text-gray-600 mb-3">{action.description}</p>
+                          <h4 className="text-xl font-bold text-gray-900 mb-3">{action.title}</h4>
                           <div className="flex flex-wrap gap-3 mb-4">
                             <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                               action.effort === 'Low' ? 'bg-green-100 text-green-700' :
