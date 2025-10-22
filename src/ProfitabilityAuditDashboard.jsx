@@ -19,7 +19,7 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbxO6lmAQfW8hLvxYqCY_9HS
 const getUrlParams = () => {
   const params = new URLSearchParams(window.location.search);
   return {
-    row: params.get('row') || '2'
+    row: params.get('row') // Don't default to '2' - return null if not provided
   };
 };
 
@@ -34,7 +34,9 @@ const ProfitabilityAuditDashboard = () => {
     async function fetchData() {
       try {
         const { row } = getUrlParams();
-        const response = await fetch(`${API_URL}?row=${row}`);
+        // Only add ?row= if row parameter exists in URL
+        const url = row ? `${API_URL}?row=${row}` : API_URL;
+        const response = await fetch(url);
         const data = await response.json();
         console.log('Fetched data:', data);
         setAuditData(data);
@@ -197,11 +199,12 @@ const ProfitabilityAuditDashboard = () => {
                   <p className="text-sm text-gray-600">{finding.description}</p>
                 </div>
                 {finding.type === 'warning' ? (
-                  <AlertCircle className="h-5 w-5 text-yellow-600 ml-4" />
+                  <AlertCircle className="h-5 w-5 text-yellow-500 ml-2 flex-shrink-0" />
                 ) : (
-                  <CheckCircle className="h-5 w-5 text-green-600 ml-4" />
+                  <CheckCircle className="h-5 w-5 text-green-500 ml-2 flex-shrink-0" />
                 )}
               </div>
+              <p className="text-xs text-gray-500 mt-2">{finding.impact}</p>
             </div>
           ))}
         </div>
@@ -209,63 +212,65 @@ const ProfitabilityAuditDashboard = () => {
     </div>
   );
 
-  const renderExpenses = () => (
-    <div className="space-y-6">
-      <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
-        <h3 className="text-xl font-bold text-gray-900 mb-6">Monthly Expense Breakdown</h3>
-        
-        <div className="space-y-4">
-          {Object.entries(data.costs).map(([category, amount]) => {
-            const percentage = ((amount / data.totalCosts) * 100).toFixed(1);
-            const isHigh = percentage > 25;
-            
-            return (
-              <div key={category} className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium text-gray-700 capitalize">
-                    {category.replace(/([A-Z])/g, ' $1').trim()}
-                  </span>
-                  <div className="text-right">
-                    <span className="font-bold text-gray-900">${amount.toLocaleString()}</span>
-                    <span className={`ml-2 text-sm ${isHigh ? 'text-red-600' : 'text-gray-500'}`}>
-                      {percentage}%
-                    </span>
+  const renderExpenses = () => {
+    const expenseCategories = [
+      { name: 'Materials/COGS', value: data.costs.materials, color: 'bg-blue-500' },
+      { name: 'Labor & Payroll', value: data.costs.labor, color: 'bg-purple-500' },
+      { name: 'Marketing', value: data.costs.marketing, color: 'bg-pink-500' },
+      { name: 'Software', value: data.costs.software, color: 'bg-green-500' },
+      { name: 'Rent & Utilities', value: data.costs.rentUtilities, color: 'bg-yellow-500' },
+      { name: 'Other Expenses', value: data.costs.other, color: 'bg-gray-500' }
+    ];
+
+    const totalExpenses = expenseCategories.reduce((sum, cat) => sum + cat.value, 0);
+
+    return (
+      <div className="space-y-6">
+        <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
+          <h3 className="text-xl font-bold text-gray-900 mb-6">Monthly Expense Breakdown</h3>
+          
+          <div className="space-y-4">
+            {expenseCategories.map((category, index) => {
+              const percentage = totalExpenses > 0 ? (category.value / totalExpenses) * 100 : 0;
+              return (
+                <div key={index}>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="font-medium text-gray-700">{category.name}</span>
+                    <div className="text-right">
+                      <span className="font-bold text-gray-900">${category.value.toLocaleString()}</span>
+                      <span className="text-sm text-gray-500 ml-2">({percentage.toFixed(1)}%)</span>
+                    </div>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-3">
+                    <div
+                      className={`${category.color} h-3 rounded-full transition-all duration-500`}
+                      style={{ width: `${percentage}%` }}
+                    ></div>
                   </div>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-3">
-                  <div
-                    className={`h-3 rounded-full ${
-                      isHigh ? 'bg-red-500' : 'bg-blue-500'
-                    }`}
-                    style={{ width: `${percentage}%` }}
-                  ></div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
 
-        <div className="mt-6 pt-6 border-t border-gray-200">
-          <div className="flex justify-between items-center">
-            <span className="text-lg font-bold text-gray-900">Total Monthly Costs</span>
-            <span className="text-2xl font-bold text-gray-900">${data.totalCosts.toLocaleString()}</span>
+          <div className="mt-6 pt-6 border-t border-gray-200">
+            <div className="flex justify-between items-center">
+              <span className="text-lg font-bold text-gray-900">Total Monthly Expenses</span>
+              <span className="text-2xl font-bold text-gray-900">${totalExpenses.toLocaleString()}</span>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderServices = () => (
     <div className="space-y-6">
       {data.services.map((service, index) => (
         <div key={index} className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <h3 className="text-xl font-bold text-gray-900">{service.name}</h3>
-              <p className="text-sm text-gray-500 mt-1">Service Performance Analysis</p>
-            </div>
+          <div className="flex items-start justify-between mb-4">
+            <h3 className="text-xl font-bold text-gray-900">{service.name}</h3>
             <div
-              className={`px-4 py-2 rounded-full text-sm font-semibold ${
+              className={`px-4 py-2 rounded-full font-semibold ${
                 service.status === 'excellent'
                   ? 'bg-green-100 text-green-800'
                   : service.status === 'good'
