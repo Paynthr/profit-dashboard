@@ -19,7 +19,7 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbxO6lmAQfW8hLvxYqCY_9HS
 const getUrlParams = () => {
   const params = new URLSearchParams(window.location.search);
   return {
-    client: params.get('client') || 'XxL1iQd'
+    row: params.get('row') || '2'
   };
 };
 
@@ -33,8 +33,8 @@ const ProfitabilityAuditDashboard = () => {
   useEffect(() => {
     async function fetchData() {
       try {
-        const { client } = getUrlParams();
-        const response = await fetch(`${API_URL}?client=${client}`);
+        const { row } = getUrlParams();
+        const response = await fetch(`${API_URL}?row=${row}`);
         const data = await response.json();
         console.log('Fetched data:', data);
         setAuditData(data);
@@ -458,7 +458,7 @@ const ProfitabilityAuditDashboard = () => {
 
         <div className="mt-12 bg-white rounded-2xl shadow-lg p-8 text-center border border-gray-100">
           <p className="text-gray-600 mb-2">
-            This audit was prepared by <span className="font-bold text-gray-900">FlexPoint Bookkeeping</span>
+            This audit was prepared by <span className="font-bold text-gray-900">Flexpoint Bookkeeping</span>
           </p>
           <p className="text-sm text-gray-500">
             For questions or to schedule a follow-up consultation, visit book.flexpointbookkeeping.com
