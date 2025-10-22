@@ -19,7 +19,8 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbxO6lmAQfW8hLvxYqCY_9HS
 const getUrlParams = () => {
   const params = new URLSearchParams(window.location.search);
   return {
-    row: params.get('row') // Don't default to '2' - return null if not provided
+    row: params.get('row'),
+    client: params.get('client')  // New: support client ID parameter
   };
 };
 
@@ -33,11 +34,28 @@ const ProfitabilityAuditDashboard = () => {
   useEffect(() => {
     async function fetchData() {
       try {
-        const { row } = getUrlParams();
-        // Only add ?row= if row parameter exists in URL
-        const url = row ? `${API_URL}?row=${row}` : API_URL;
+        const { row, client } = getUrlParams();
+        
+        // Build URL based on what parameters are provided
+        let url = API_URL;
+        if (client) {
+          // Client ID takes priority - secure client link
+          url = `${API_URL}?client=${client}`;
+        } else if (row) {
+          // Row parameter - manual override
+          url = `${API_URL}?row=${row}`;
+        }
+        // If neither parameter, just fetch API_URL (reads from B1)
+        
         const response = await fetch(url);
         const data = await response.json();
+        
+        if (data.error) {
+          setError(data.error);
+          setLoading(false);
+          return;
+        }
+        
         console.log('Fetched data:', data);
         setAuditData(data);
         setLoading(false);
