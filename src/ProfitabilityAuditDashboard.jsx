@@ -14,15 +14,12 @@ import {
   Printer
 } from 'lucide-react';
 
-// API Configuration
 const API_URL = 'https://script.google.com/macros/s/AKfycbxO6lmAQfW8hLvxYqCY_9HSBIHmlNkvCykLRVDk-DbVbBX4AmGzVwP1_hPWXw6cMjc/exec';
 
-// Get URL parameters for dynamic client data
 const getUrlParams = () => {
   const params = new URLSearchParams(window.location.search);
   return {
-    sheetId: params.get('sheet') || '1ucWx1DVYRyw9ywTIJAs2J8vYtEnHkbpJYYFXpnn580o',
-    clientRow: params.get('row') || '2'
+    client: params.get('client') || 'XxL1iQd'
   };
 };
 
@@ -36,8 +33,8 @@ const ProfitabilityAuditDashboard = () => {
   useEffect(() => {
     async function fetchData() {
       try {
-        const { sheetId, clientRow } = getUrlParams();
-        const response = await fetch(`${API_URL}?sheetId=${sheetId}&clientRow=${clientRow}`);
+        const { client } = getUrlParams();
+        const response = await fetch(`${API_URL}?client=${client}`);
         const data = await response.json();
         console.log('Fetched data:', data);
         setAuditData(data);
@@ -51,7 +48,6 @@ const ProfitabilityAuditDashboard = () => {
     fetchData();
   }, []);
 
-  // Listen for print events
   useEffect(() => {
     const beforePrint = () => setIsPrinting(true);
     const afterPrint = () => setIsPrinting(false);
@@ -114,7 +110,6 @@ const ProfitabilityAuditDashboard = () => {
 
   const renderOverview = () => (
     <div className="space-y-6">
-      {/* Bottom Line Up Front */}
       <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl p-8 text-white shadow-xl">
         <div className="flex items-start gap-3 mb-6">
           <Target className="h-8 w-8 mt-1" />
@@ -129,7 +124,6 @@ const ProfitabilityAuditDashboard = () => {
           </div>
         </div>
 
-        {/* Action Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {data.actions.slice(0, 3).map((action, index) => (
             <div key={index} className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
@@ -141,7 +135,6 @@ const ProfitabilityAuditDashboard = () => {
         </div>
       </div>
 
-      {/* Financial Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
           <div className="flex items-center gap-2 text-gray-600 mb-2">
@@ -182,7 +175,6 @@ const ProfitabilityAuditDashboard = () => {
         </div>
       </div>
 
-      {/* What We Found */}
       <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
         <div className="flex items-center gap-2 mb-6">
           <AlertCircle className="h-6 w-6 text-orange-500" />
@@ -372,7 +364,6 @@ const ProfitabilityAuditDashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
         <div className="bg-white rounded-2xl shadow-lg p-8 mb-8 border border-gray-100">
           <div className="flex justify-between items-start">
             <div>
@@ -395,7 +386,6 @@ const ProfitabilityAuditDashboard = () => {
                 <div className="text-sm opacity-90">per year</div>
               </div>
               
-              {/* Print/Download Button - Hide when printing */}
               <button
                 onClick={handlePrint}
                 className="no-print flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-md"
@@ -407,7 +397,6 @@ const ProfitabilityAuditDashboard = () => {
           </div>
         </div>
 
-        {/* Tabs - Hide when printing */}
         <div className="no-print bg-white rounded-2xl shadow-lg mb-8 border border-gray-100 overflow-hidden">
           <div className="flex border-b border-gray-200">
             {tabs.map((tab) => {
@@ -430,7 +419,6 @@ const ProfitabilityAuditDashboard = () => {
           </div>
         </div>
 
-        {/* Tab Content - Show active tab when NOT printing, show all when printing */}
         {!isPrinting ? (
           <div>
             {activeTab === 'overview' && renderOverview()}
@@ -440,34 +428,27 @@ const ProfitabilityAuditDashboard = () => {
           </div>
         ) : (
           <div className="print-all-tabs">
-            {/* Overview Section */}
             <div className="mb-12">
               <h2 className="text-3xl font-bold text-gray-900 mb-6 pb-4 border-b-2 border-blue-600">Overview</h2>
               {renderOverview()}
             </div>
             
-            {/* Page break */}
             <div className="page-break"></div>
             
-            {/* Expenses Section */}
             <div className="mb-12">
               <h2 className="text-3xl font-bold text-gray-900 mb-6 pb-4 border-b-2 border-blue-600">Where Money Goes</h2>
               {renderExpenses()}
             </div>
             
-            {/* Page break */}
             <div className="page-break"></div>
             
-            {/* Services Section */}
             <div className="mb-12">
               <h2 className="text-3xl font-bold text-gray-900 mb-6 pb-4 border-b-2 border-blue-600">Service Profitability</h2>
               {renderServices()}
             </div>
             
-            {/* Page break */}
             <div className="page-break"></div>
             
-            {/* Actions Section */}
             <div className="mb-12">
               <h2 className="text-3xl font-bold text-gray-900 mb-6 pb-4 border-b-2 border-blue-600">Action Plan</h2>
               {renderActions()}
@@ -475,7 +456,6 @@ const ProfitabilityAuditDashboard = () => {
           </div>
         )}
 
-        {/* Footer */}
         <div className="mt-12 bg-white rounded-2xl shadow-lg p-8 text-center border border-gray-100">
           <p className="text-gray-600 mb-2">
             This audit was prepared by <span className="font-bold text-gray-900">FlexPoint Bookkeeping</span>
