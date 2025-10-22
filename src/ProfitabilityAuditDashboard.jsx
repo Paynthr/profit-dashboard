@@ -3,7 +3,6 @@ import { DollarSign, TrendingDown, TrendingUp, Target, AlertCircle, CheckCircle2
 
 const API_URL = 'https://script.google.com/macros/s/AKfycbxO6lmAQfW8hLvxYqCY_9HSBIHmlNkvCykLRVDk-DbVbBX4AmGzVwP1_hPWXw6cMjc/exec';
 
-
 const ProfitabilityAuditDashboard = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
