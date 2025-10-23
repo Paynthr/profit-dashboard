@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DollarSign, TrendingDown, TrendingUp, Target, AlertCircle, CheckCircle2, Printer, BarChart3, PieChart, ListChecks } from 'lucide-react';
 
-const API_URL = 'https://script.google.com/macros/s/AKfycbxO6lmAQfW8hLvxYqCY_9HSBIHmlNkvCykLRVDk-DbVbBX4AmGzVwP1_hPWXw6cMjc/exec';
+const API_URL = 'https://docs.google.com/spreadsheets/d/1ucWx1DVYRyw9ywTIJAs2J8vYtEnHkbpJYYFXpnn580o/edit?usp=sharing';
 
 const ProfitabilityAuditDashboard = () => {
   const [data, setData] = useState(null);
@@ -135,15 +135,22 @@ const ProfitabilityAuditDashboard = () => {
         {/* Header */}
         <div className="bg-white rounded-2xl shadow-md p-6 sm:p-8 mb-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="flex-1">
-              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-                Profitability Audit
-              </h1>
-              <p className="text-xl text-gray-700">{data.businessName}</p>
-              <p className="text-sm text-gray-500 flex items-center gap-2 mt-1">
-                <span>📅</span>
-                {formatDate(data.auditDate)}
-              </p>
+            <div className="flex items-center gap-4 flex-1">
+              <img 
+                src="/logo.png" 
+                alt="Company Logo" 
+                className="w-16 h-16 object-contain rounded-lg"
+              />
+              <div>
+                <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+                  Profitability Audit
+                </h1>
+                <p className="text-xl text-gray-700">{data.businessName}</p>
+                <p className="text-sm text-gray-500 flex items-center gap-2 mt-1">
+                  <span>📅</span>
+                  {formatDate(data.auditDate)}
+                </p>
+              </div>
             </div>
             <div className="flex gap-3">
               <div className="text-right bg-green-500 px-6 py-4 rounded-xl">
@@ -177,13 +184,13 @@ const ProfitabilityAuditDashboard = () => {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center gap-2 px-6 py-4 font-medium text-sm whitespace-nowrap transition-colors ${
+                    className={`flex items-center gap-2 px-6 py-4 font-medium transition-colors whitespace-nowrap ${
                       activeTab === tab.id
-                        ? 'text-white bg-blue-600'
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                        ? 'bg-blue-600 text-white'
+                        : 'text-gray-600 hover:bg-gray-50'
                     }`}
                   >
-                    <Icon className="w-4 h-4" />
+                    <Icon className="w-5 h-5" />
                     {tab.label}
                   </button>
                 );
@@ -194,8 +201,8 @@ const ProfitabilityAuditDashboard = () => {
           {/* Overview Tab */}
           <div className={`tab-content ${activeTab === 'overview' ? '' : 'hidden print:block'}`}>
             <div className="p-6 sm:p-8">
-              {/* Bottom Line Up Front */}
-              <div className="bg-blue-600 rounded-2xl p-6 sm:p-8 mb-6 text-white">
+              {/* Hero Banner */}
+              <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-6 sm:p-8 text-white mb-8">
                 <div className="flex items-start gap-4">
                   <div className="bg-white/20 p-3 rounded-xl">
                     <Target className="w-8 h-8" />
@@ -203,112 +210,111 @@ const ProfitabilityAuditDashboard = () => {
                   <div className="flex-1">
                     <h2 className="text-2xl font-bold mb-3">Bottom Line Up Front</h2>
                     <p className="text-lg leading-relaxed">
-                      You have <span className="font-bold text-white">{formatCurrency(data.totalImpact)}</span> in annual profit sitting on the table through {data.actions?.length || 0} fixable issues. 
-                      {data.profitMargin > 50 ? (
-                        <span> With your excellent {data.profitMargin.toFixed(1)}% margin, these strategic optimizations will unlock even more profit potential.</span>
-                      ) : data.profitMargin < 0 ? (
-                        <span> With the right moves, we can turn your business profitable and achieve a {data.targetMargin}% profit margin in 90 days.</span>
-                      ) : (
-                        <span> With the right moves, we can increase your profit margin from{' '}
-                        <span className="font-bold text-white">{data.profitMargin.toFixed(1)}%</span> to{' '}
-                        <span className="font-bold text-white">{data.targetMargin}%</span> in 90 days.</span>
-                      )}
+                      You have <span className="font-bold">{formatCurrency(data.totalImpact)}</span> in annual profit sitting on the table through 3 fixable issues. 
+                      With the right moves, we can turn your business profitable and achieve a {
+                        (() => {
+                          const currentProfit = data.revenue - data.totalCosts;
+                          const potentialProfit = Math.max(0, currentProfit + data.totalImpact);
+                          const potentialMargin = data.revenue > 0 ? ((potentialProfit / data.revenue) * 100).toFixed(0) : 0;
+                          return potentialMargin;
+                        })()
+                      }% profit margin in 90 days.
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Financial Metrics Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                <div className="bg-white rounded-xl border border-gray-200 p-6">
+              {/* Key Metrics */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                {/* Current Revenue */}
+                <div className="bg-white border-2 border-gray-200 rounded-xl p-6">
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="bg-gray-100 p-2 rounded-lg">
-                      <DollarSign className="w-5 h-5 text-gray-700" />
+                    <div className="bg-blue-100 p-2 rounded-lg">
+                      <DollarSign className="w-5 h-5 text-blue-600" />
                     </div>
-                    <p className="text-sm font-medium text-gray-600">Current Revenue</p>
+                    <span className="text-sm font-medium text-gray-600">Current Revenue</span>
                   </div>
-                  <p className="text-3xl font-bold text-gray-900">{formatCurrency(data.revenue)}</p>
-                  <p className="text-xs text-gray-500 mt-1">Monthly</p>
+                  <p className="text-3xl font-bold text-gray-900 mb-1">{formatCurrency(data.revenue)}</p>
+                  <p className="text-sm text-gray-500">Monthly</p>
                 </div>
 
-                <div className="bg-white rounded-xl border border-gray-200 p-6">
+                {/* Total Costs */}
+                <div className="bg-white border-2 border-gray-200 rounded-xl p-6">
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="bg-red-50 p-2 rounded-lg">
+                    <div className="bg-red-100 p-2 rounded-lg">
                       <TrendingDown className="w-5 h-5 text-red-600" />
                     </div>
-                    <p className="text-sm font-medium text-gray-600">Total Costs</p>
+                    <span className="text-sm font-medium text-gray-600">Total Costs</span>
                   </div>
-                  <p className="text-3xl font-bold text-gray-900">{formatCurrency(data.totalCosts)}</p>
-                  <p className="text-xs text-gray-500 mt-1">Monthly</p>
+                  <p className="text-3xl font-bold text-gray-900 mb-1">{formatCurrency(data.totalCosts)}</p>
+                  <p className="text-sm text-gray-500">Monthly</p>
                 </div>
 
-                <div className={`rounded-xl border border-gray-200 p-6 ${
-                  data.netProfit < 0 ? 'bg-red-50' : 'bg-green-50'
-                }`}>
+                {/* Current Profit */}
+                <div className="bg-red-50 border-2 border-red-200 rounded-xl p-6">
                   <div className="flex items-center gap-3 mb-3">
-                    <div className={`p-2 rounded-lg ${data.netProfit < 0 ? 'bg-red-100' : 'bg-green-100'}`}>
-                      <TrendingUp className={`w-5 h-5 ${data.netProfit < 0 ? 'text-red-600' : 'text-green-600'}`} />
+                    <div className="bg-red-100 p-2 rounded-lg">
+                      <TrendingDown className="w-5 h-5 text-red-600" />
                     </div>
-                    <p className="text-sm font-medium text-gray-600">Current Profit</p>
+                    <span className="text-sm font-medium text-red-700">Current Profit</span>
                   </div>
-                  <p className={`text-3xl font-bold ${data.netProfit < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                    {formatCurrency(data.netProfit)}
+                  <p className="text-3xl font-bold text-red-700 mb-1">
+                    {formatCurrency(data.revenue - data.totalCosts)}
                   </p>
-                  <p className={`text-sm font-semibold mt-1 ${data.netProfit < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                    {data.profitMargin.toFixed(1)}% margin
+                  <p className="text-sm text-red-600 font-medium">
+                    {((data.revenue - data.totalCosts) / data.revenue * 100).toFixed(1)}% margin
                   </p>
                 </div>
 
-                <div className="bg-white rounded-xl border border-gray-200 p-6">
+                {/* Potential Profit - FIXED */}
+                <div className="bg-green-50 border-2 border-green-200 rounded-xl p-6">
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="bg-orange-50 p-2 rounded-lg">
-                      <Target className="w-5 h-5 text-orange-600" />
+                    <div className="bg-green-100 p-2 rounded-lg">
+                      <Target className="w-5 h-5 text-green-600" />
                     </div>
-                    <p className="text-sm font-medium text-gray-600">Potential Profit</p>
+                    <span className="text-sm font-medium text-green-700">Potential Profit</span>
                   </div>
-                  <p className="text-3xl font-bold text-orange-600">{formatCurrency(data.netProfit + (data.totalImpact / 12))}</p>
-                  <p className="text-sm font-semibold text-orange-600 mt-1">{data.targetMargin}% margin</p>
+                  <p className="text-3xl font-bold text-green-700 mb-1">
+                    {formatCurrency(Math.max(0, (data.revenue - data.totalCosts) + data.totalImpact))}
+                  </p>
+                  <p className="text-sm text-green-600 font-medium">
+                    {(() => {
+                      const currentProfit = data.revenue - data.totalCosts;
+                      const potentialProfit = Math.max(0, currentProfit + data.totalImpact);
+                      const potentialMargin = data.revenue > 0 ? ((potentialProfit / data.revenue) * 100).toFixed(0) : 0;
+                      return potentialMargin;
+                    })()}% margin
+                  </p>
                 </div>
               </div>
 
               {/* What We Found */}
-              {data.findings && data.findings.length > 0 && (
-                <div className="mb-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <AlertCircle className="w-6 h-6 text-orange-600" />
-                    <h2 className="text-xl font-bold text-gray-900">What We Found</h2>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    {data.findings.map((finding, idx) => (
-                      <div 
-                        key={idx}
-                        className={`border-l-4 p-4 rounded-r-lg ${
-                          finding.type === 'success' 
-                            ? 'bg-green-50 border-green-500' 
-                            : finding.type === 'warning'
-                            ? 'bg-yellow-50 border-yellow-500'
-                            : 'bg-red-50 border-red-500'
-                        }`}
-                      >
+              <div className="mb-6">
+                <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <AlertCircle className="w-6 h-6 text-orange-500" />
+                  What We Found
+                </h3>
+                <div className="space-y-3">
+                  {data.findings && data.findings.length > 0 ? (
+                    data.findings.map((finding, idx) => (
+                      <div key={idx} className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-4">
                         <div className="flex items-start gap-3">
-                          <div className={`mt-0.5 ${
-                            finding.type === 'success' ? 'text-green-600' : 
-                            finding.type === 'warning' ? 'text-yellow-600' : 'text-red-600'
-                          }`}>
-                            {finding.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
-                          </div>
+                          <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
                           <div className="flex-1">
-                            <h3 className="font-bold text-gray-900 mb-1">{finding.title}</h3>
-                            <p className="text-sm text-gray-700">{finding.description}</p>
-                            <p className="text-xs text-gray-600 mt-1">{finding.impact}</p>
+                            <h4 className="font-bold text-gray-900 mb-1">{finding.issue}</h4>
+                            <p className="text-sm text-gray-700 mb-2">{finding.description}</p>
+                            <p className="text-xs text-gray-600">{finding.recommendation}</p>
                           </div>
                         </div>
                       </div>
-                    ))}
-                  </div>
+                    ))
+                  ) : (
+                    <div className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-4">
+                      <p className="text-sm text-gray-700">No issues found in the data.</p>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
           </div>
 
