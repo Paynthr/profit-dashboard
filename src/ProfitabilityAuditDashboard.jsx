@@ -1,47 +1,10 @@
-'use client';
-
 import React, { useEffect, useState } from 'react';
 import { DollarSign, TrendingUp, AlertCircle, CheckCircle, Target, BarChart3 } from 'lucide-react';
 
-interface DashboardData {
-  companyName: string;
-  revenue: number;
-  expenses: number;
-  netProfit: number;
-  currentMargin: number;
-  targetMargin: number;
-  potentialProfit: number;
-  profitIncrease: number;
-  costs: {
-    materials: number;
-    labor: number;
-    marketing: number;
-    software: number;
-    rentUtilities: number;
-    other: number;
-  };
-  services: Array<{
-    name: string;
-    revenue: number;
-    cost: number;
-    margin: number;
-    status: 'excellent' | 'good' | 'warning';
-  }>;
-  actions: Array<{
-    title: string;
-    impact: number;
-    description: string;
-    timeline: string;
-  }>;
-  totalOpportunity: number;
-  healthScore: number;
-  findings: string[];
-}
-
-export default function ProfitDashboard() {
-  const [data, setData] = useState<DashboardData | null>(null);
+export default function ProfitabilityAuditDashboard() {
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -60,7 +23,6 @@ export default function ProfitDashboard() {
         
         const result = await response.json();
         
-        // Check if the result contains an error
         if (result.error) {
           throw new Error(result.message || result.error);
         }
@@ -76,7 +38,7 @@ export default function ProfitDashboard() {
     fetchData();
   }, []);
 
-  const formatCurrency = (value: number) => {
+  const formatCurrency = (value) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
@@ -85,7 +47,7 @@ export default function ProfitDashboard() {
     }).format(value);
   };
 
-  const formatPercent = (value: number) => {
+  const formatPercent = (value) => {
     return `${value.toFixed(1)}%`;
   };
 
@@ -118,19 +80,19 @@ export default function ProfitDashboard() {
     );
   }
 
-  const getHealthColor = (score: number) => {
+  const getHealthColor = (score) => {
     if (score >= 80) return 'text-green-600';
     if (score >= 60) return 'text-yellow-600';
     return 'text-red-600';
   };
 
-  const getHealthBgColor = (score: number) => {
+  const getHealthBgColor = (score) => {
     if (score >= 80) return 'bg-green-600';
     if (score >= 60) return 'bg-yellow-600';
     return 'bg-red-600';
   };
 
-  const getHealthLabel = (score: number) => {
+  const getHealthLabel = (score) => {
     if (score >= 80) return 'Excellent';
     if (score >= 60) return 'Good';
     return 'Needs Attention';
@@ -138,7 +100,6 @@ export default function ProfitDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      {/* Header with Flexpoint Branding */}
       <header className="bg-white shadow-sm border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
@@ -158,13 +119,11 @@ export default function ProfitDashboard() {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Company Header */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <h2 className="text-3xl font-bold text-slate-800 mb-2">{data.companyName}</h2>
           <p className="text-slate-600">Comprehensive Profit Analysis & Action Plan</p>
         </div>
 
-        {/* Key Metrics Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center justify-between mb-2">
@@ -201,7 +160,6 @@ export default function ProfitDashboard() {
           </div>
         </div>
 
-        {/* Profit Opportunity Banner */}
         {data.profitIncrease > 0 && (
           <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-lg p-6 mb-8">
             <div className="flex items-start gap-4">
@@ -220,7 +178,6 @@ export default function ProfitDashboard() {
           </div>
         )}
 
-        {/* Financial Health Check */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <div className="flex items-center gap-3 mb-6">
             <BarChart3 className="h-6 w-6 text-blue-600" />
@@ -253,7 +210,6 @@ export default function ProfitDashboard() {
           </div>
         </div>
 
-        {/* Expense Breakdown */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <h3 className="text-2xl font-bold text-slate-800 mb-6">Where Your Money Goes</h3>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -272,7 +228,6 @@ export default function ProfitDashboard() {
           </div>
         </div>
 
-        {/* Service Performance */}
         {data.services.length > 0 && (
           <div className="bg-white rounded-lg shadow-md p-6 mb-8">
             <h3 className="text-2xl font-bold text-slate-800 mb-6">Service Profitability</h3>
@@ -305,7 +260,6 @@ export default function ProfitDashboard() {
           </div>
         )}
 
-        {/* Action Plan */}
         {data.actions.length > 0 && (
           <div className="bg-white rounded-lg shadow-md p-6 mb-8">
             <h3 className="text-2xl font-bold text-slate-800 mb-2">Your 3-Step Action Plan</h3>
@@ -348,7 +302,6 @@ export default function ProfitDashboard() {
           </div>
         )}
 
-        {/* Footer */}
         <div className="bg-slate-800 rounded-lg shadow-md p-8 text-center">
           <img 
             src="https://www.flexpointbookkeeping.com/wp-content/uploads/2021/10/logo-lines.png" 
