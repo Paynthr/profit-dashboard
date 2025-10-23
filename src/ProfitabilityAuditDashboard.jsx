@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DollarSign, TrendingDown, TrendingUp, Target, AlertCircle, CheckCircle2, Printer, BarChart3, PieChart, ListChecks } from 'lucide-react';
 
-const API_URL = 'https://script.google.com/macros/s/AKfycbxO6lmAQfW8hLvxYqCY_9HSBIHmlNkvCykLRVDk-DbVbBX4AmGzVwP1_hPWXw6cMjc/exec';
+const API_URL = 'https://docs.google.com/spreadsheets/d/1ucWx1DVYRyw9ywTIJAs2J8vYtEnHkbpJYYFXpnn580o/edit?usp=sharing';
 
 const ProfitabilityAuditDashboard = () => {
   const [data, setData] = useState(null);
@@ -137,8 +137,8 @@ const ProfitabilityAuditDashboard = () => {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div className="flex items-center gap-4 flex-1">
               <img 
-                src="/logo.png" 
-                alt="Company Logo" 
+                src="/Full Logo Flexpoint_RGB-05.jpg" 
+                alt="Flexpoint Logo" 
                 className="w-16 h-16 object-contain rounded-lg"
               />
               <div>
@@ -214,7 +214,8 @@ const ProfitabilityAuditDashboard = () => {
                       With the right moves, we can turn your business profitable and achieve a {
                         (() => {
                           const currentProfit = data.revenue - data.totalCosts;
-                          const potentialProfit = Math.max(0, currentProfit + data.totalImpact);
+                          const monthlyOpportunity = data.totalImpact / 12;
+                          const potentialProfit = Math.max(0, currentProfit + monthlyOpportunity);
                           const potentialMargin = data.revenue > 0 ? ((potentialProfit / data.revenue) * 100).toFixed(0) : 0;
                           return potentialMargin;
                         })()
@@ -275,12 +276,13 @@ const ProfitabilityAuditDashboard = () => {
                     <span className="text-sm font-medium text-green-700">Potential Profit</span>
                   </div>
                   <p className="text-3xl font-bold text-green-700 mb-1">
-                    {formatCurrency(Math.max(0, (data.revenue - data.totalCosts) + data.totalImpact))}
+                    {formatCurrency(Math.max(0, (data.revenue - data.totalCosts) + (data.totalImpact / 12)))}
                   </p>
                   <p className="text-sm text-green-600 font-medium">
                     {(() => {
                       const currentProfit = data.revenue - data.totalCosts;
-                      const potentialProfit = Math.max(0, currentProfit + data.totalImpact);
+                      const monthlyOpportunity = data.totalImpact / 12;
+                      const potentialProfit = Math.max(0, currentProfit + monthlyOpportunity);
                       const potentialMargin = data.revenue > 0 ? ((potentialProfit / data.revenue) * 100).toFixed(0) : 0;
                       return potentialMargin;
                     })()}% margin
