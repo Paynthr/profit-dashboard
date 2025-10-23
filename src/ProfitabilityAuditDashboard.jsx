@@ -23,6 +23,7 @@ const ProfitabilityAuditDashboard = () => {
           fetchUrl += `?row=${row}`;
         }
         
+        console.log('Fetching from:', fetchUrl);
         const response = await fetch(fetchUrl);
         
         if (!response.ok) {
@@ -30,6 +31,7 @@ const ProfitabilityAuditDashboard = () => {
         }
         
         const result = await response.json();
+        console.log('Received data:', result);
         
         if (result.error) {
           throw new Error(result.error);
@@ -101,12 +103,12 @@ const ProfitabilityAuditDashboard = () => {
   // Helper function to determine cost bar color
   const getCostBarColor = (costType, percentage) => {
     const thresholds = {
-      labor: 20,      // >20% is bad
-      software: 5,    // >5% is bad
-      marketing: 10,  // >10% is bad
-      materials: 40,  // >40% is bad
-      rentUtilities: 15, // >15% is bad
-      other: 10       // >10% is bad
+      labor: 20,
+      software: 5,
+      marketing: 10,
+      materials: 40,
+      rentUtilities: 15,
+      other: 10
     };
     
     const threshold = thresholds[costType] || 15;
@@ -135,11 +137,12 @@ const ProfitabilityAuditDashboard = () => {
         {/* Header */}
         <div className="bg-white rounded-2xl shadow-md p-6 sm:p-8 mb-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div className="flex items-center gap-4 flex-1">
+            <div className="flex items-center gap-6 flex-1">
               <img 
                 src="/Full Logo Flexpoint_RGB-05.jpg" 
                 alt="Flexpoint Logo" 
-                className="w-16 h-16 object-contain rounded-lg"
+                className="h-20 w-auto object-contain"
+                style={{ maxWidth: '200px' }}
               />
               <div>
                 <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
@@ -263,11 +266,11 @@ const ProfitabilityAuditDashboard = () => {
                     {formatCurrency(data.revenue - data.totalCosts)}
                   </p>
                   <p className="text-sm text-red-600 font-medium">
-                    {((data.revenue - data.totalCosts) / data.revenue * 100).toFixed(1)}% margin
+                    {data.revenue > 0 ? ((data.revenue - data.totalCosts) / data.revenue * 100).toFixed(1) : 0}% margin
                   </p>
                 </div>
 
-                {/* Potential Profit - FIXED */}
+                {/* Potential Profit */}
                 <div className="bg-green-50 border-2 border-green-200 rounded-xl p-6">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="bg-green-100 p-2 rounded-lg">
@@ -358,45 +361,51 @@ const ProfitabilityAuditDashboard = () => {
             <div className="p-6 sm:p-8">
               <h3 className="text-xl font-bold text-gray-900 mb-6 print:block hidden">Service Profitability</h3>
               <div className="space-y-4">
-                {data.services.map((service, idx) => {
-                  const cardBgColor = service.status === 'excellent' ? 'bg-green-50' : 
-                                     service.status === 'good' ? 'bg-blue-50' : 'bg-yellow-50';
-                  const cardBorderColor = service.status === 'excellent' ? 'border-green-200' : 
-                                         service.status === 'good' ? 'border-blue-200' : 'border-yellow-200';
-                  
-                  return (
-                    <div key={idx} className={`${cardBgColor} border-2 ${cardBorderColor} rounded-xl p-6`}>
-                      <div className="flex justify-between items-start mb-4">
-                        <div>
-                          <h4 className="text-lg font-bold text-gray-900 mb-2">{service.name}</h4>
-                          <p className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
-                            service.status === 'excellent' ? 'bg-green-200 text-green-800' :
-                            service.status === 'good' ? 'bg-blue-200 text-blue-800' :
-                            'bg-yellow-200 text-yellow-800'
-                          }`}>
-                            {service.margin.toFixed(1)}% margin
-                          </p>
+                {data.services && data.services.length > 0 ? (
+                  data.services.map((service, idx) => {
+                    const cardBgColor = service.status === 'excellent' ? 'bg-green-50' : 
+                                       service.status === 'good' ? 'bg-blue-50' : 'bg-yellow-50';
+                    const cardBorderColor = service.status === 'excellent' ? 'border-green-200' : 
+                                           service.status === 'good' ? 'border-blue-200' : 'border-yellow-200';
+                    
+                    return (
+                      <div key={idx} className={`${cardBgColor} border-2 ${cardBorderColor} rounded-xl p-6`}>
+                        <div className="flex justify-between items-start mb-4">
+                          <div>
+                            <h4 className="text-lg font-bold text-gray-900 mb-2">{service.name}</h4>
+                            <p className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
+                              service.status === 'excellent' ? 'bg-green-200 text-green-800' :
+                              service.status === 'good' ? 'bg-blue-200 text-blue-800' :
+                              'bg-yellow-200 text-yellow-800'
+                            }`}>
+                              {service.margin.toFixed(1)}% margin
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-2xl font-bold text-gray-900">{formatCurrency(service.revenue)}</p>
+                            <p className="text-sm text-gray-600">monthly revenue</p>
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <p className="text-2xl font-bold text-gray-900">{formatCurrency(service.revenue)}</p>
-                          <p className="text-sm text-gray-600">monthly revenue</p>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="bg-white p-3 rounded-lg border border-gray-200">
+                            <p className="text-xs text-gray-600 mb-1">Cost</p>
+                            <p className="text-lg font-bold text-gray-900">{formatCurrency(service.cost)}</p>
+                          </div>
+                          <div className="bg-white p-3 rounded-lg border border-gray-200">
+                            <p className="text-xs text-gray-600 mb-1">Profit</p>
+                            <p className={`text-lg font-bold ${service.revenue - service.cost >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                              {formatCurrency(service.revenue - service.cost)}
+                            </p>
+                          </div>
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-white p-3 rounded-lg border border-gray-200">
-                          <p className="text-xs text-gray-600 mb-1">Cost</p>
-                          <p className="text-lg font-bold text-gray-900">{formatCurrency(service.cost)}</p>
-                        </div>
-                        <div className="bg-white p-3 rounded-lg border border-gray-200">
-                          <p className="text-xs text-gray-600 mb-1">Profit</p>
-                          <p className={`text-lg font-bold ${service.revenue - service.cost >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-                            {formatCurrency(service.revenue - service.cost)}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })
+                ) : (
+                  <div className="text-center py-12 text-gray-500">
+                    <p>No service data available.</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -466,7 +475,7 @@ const ProfitabilityAuditDashboard = () => {
                   ))
                 ) : (
                   <div className="text-center py-12 text-gray-500">
-                    <p>No action items available. Run the AI recommendation generator to create personalized actions.</p>
+                    <p>No action items available.</p>
                   </div>
                 )}
               </div>
