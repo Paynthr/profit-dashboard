@@ -100,7 +100,6 @@ const ProfitabilityAuditDashboard = () => {
     return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   };
 
-  // Helper function to determine cost bar color
   const getCostBarColor = (costType, percentage) => {
     const thresholds = {
       labor: 20,
@@ -218,9 +217,10 @@ const ProfitabilityAuditDashboard = () => {
                         (() => {
                           const currentProfit = data.revenue - data.totalCosts;
                           const monthlyOpportunity = data.totalImpact / 12;
-                          const potentialProfit = Math.max(0, currentProfit + monthlyOpportunity);
-                          const potentialMargin = data.revenue > 0 ? ((potentialProfit / data.revenue) * 100).toFixed(0) : 0;
-                          return potentialMargin;
+                          const potentialProfit = currentProfit + monthlyOpportunity;
+                          const potentialRevenue = data.revenue + (monthlyOpportunity * 0.5);
+                          const potentialMargin = potentialRevenue > 0 ? ((potentialProfit / potentialRevenue) * 100) : 0;
+                          return Math.min(potentialMargin, 99).toFixed(0);
                         })()
                       }% profit margin in 90 days.
                     </p>
@@ -254,43 +254,59 @@ const ProfitabilityAuditDashboard = () => {
                   <p className="text-sm text-gray-500">Monthly</p>
                 </div>
 
-                {/* Current Profit */}
-                <div className="bg-red-50 border-2 border-red-200 rounded-xl p-6">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="bg-red-100 p-2 rounded-lg">
-                      <TrendingDown className="w-5 h-5 text-red-600" />
+                {/* Current Profit - Conditional Coloring */}
+                {(() => {
+                  const currentProfit = data.revenue - data.totalCosts;
+                  const currentMargin = data.revenue > 0 ? ((currentProfit / data.revenue) * 100) : 0;
+                  const isPositive = currentProfit >= 0;
+                  
+                  return (
+                    <div className={`${isPositive ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'} border-2 rounded-xl p-6`}>
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className={`${isPositive ? 'bg-green-100' : 'bg-red-100'} p-2 rounded-lg`}>
+                          {isPositive ? (
+                            <TrendingUp className="w-5 h-5 text-green-600" />
+                          ) : (
+                            <TrendingDown className="w-5 h-5 text-red-600" />
+                          )}
+                        </div>
+                        <span className={`text-sm font-medium ${isPositive ? 'text-green-700' : 'text-red-700'}`}>Current Profit</span>
+                      </div>
+                      <p className={`text-3xl font-bold ${isPositive ? 'text-green-700' : 'text-red-700'} mb-1`}>
+                        {formatCurrency(currentProfit)}
+                      </p>
+                      <p className={`text-sm font-medium ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                        {currentMargin.toFixed(1)}% margin
+                      </p>
                     </div>
-                    <span className="text-sm font-medium text-red-700">Current Profit</span>
-                  </div>
-                  <p className="text-3xl font-bold text-red-700 mb-1">
-                    {formatCurrency(data.revenue - data.totalCosts)}
-                  </p>
-                  <p className="text-sm text-red-600 font-medium">
-                    {data.revenue > 0 ? ((data.revenue - data.totalCosts) / data.revenue * 100).toFixed(1) : 0}% margin
-                  </p>
-                </div>
+                  );
+                })()}
 
-                {/* Potential Profit */}
-                <div className="bg-green-50 border-2 border-green-200 rounded-xl p-6">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="bg-green-100 p-2 rounded-lg">
-                      <Target className="w-5 h-5 text-green-600" />
+                {/* Potential Profit - Fixed Calculation */}
+                {(() => {
+                  const currentProfit = data.revenue - data.totalCosts;
+                  const monthlyOpportunity = data.totalImpact / 12;
+                  const potentialProfit = currentProfit + monthlyOpportunity;
+                  const potentialRevenue = data.revenue + (monthlyOpportunity * 0.5);
+                  const potentialMargin = potentialRevenue > 0 ? ((potentialProfit / potentialRevenue) * 100) : 0;
+                  
+                  return (
+                    <div className="bg-green-50 border-2 border-green-200 rounded-xl p-6">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="bg-green-100 p-2 rounded-lg">
+                          <Target className="w-5 h-5 text-green-600" />
+                        </div>
+                        <span className="text-sm font-medium text-green-700">Potential Profit</span>
+                      </div>
+                      <p className="text-3xl font-bold text-green-700 mb-1">
+                        {formatCurrency(potentialProfit)}
+                      </p>
+                      <p className="text-sm text-green-600 font-medium">
+                        {Math.min(potentialMargin, 99).toFixed(0)}% margin
+                      </p>
                     </div>
-                    <span className="text-sm font-medium text-green-700">Potential Profit</span>
-                  </div>
-                  <p className="text-3xl font-bold text-green-700 mb-1">
-                    {formatCurrency(Math.max(0, (data.revenue - data.totalCosts) + (data.totalImpact / 12)))}
-                  </p>
-                  <p className="text-sm text-green-600 font-medium">
-                    {(() => {
-                      const currentProfit = data.revenue - data.totalCosts;
-                      const monthlyOpportunity = data.totalImpact / 12;
-                      const potentialProfit = Math.max(0, currentProfit + monthlyOpportunity);
-                      const potentialMargin = data.revenue > 0 ? ((potentialProfit / data.revenue) * 100).toFixed(0) : 0;
-                      return potentialMargin;
-                    })()}% margin
-                  </p>
-                </div>
+                  );
+                })()}
               </div>
 
               {/* What We Found */}
