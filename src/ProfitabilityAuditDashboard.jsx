@@ -1,52 +1,44 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, TrendingUp, TrendingDown, AlertCircle, CheckCircle, Target, PieChart, BarChart3 } from 'lucide-react';
+import { DollarSign, TrendingDown, TrendingUp, Target, AlertCircle, CheckCircle2, Printer, BarChart3, PieChart, ListChecks } from 'lucide-react';
 
-const ProfitabilityAuditReport = () => {
-  const [activeTab, setActiveTab] = useState('overview');
-  const [clientData, setClientData] = useState(null);
+const API_URL = 'https://script.google.com/macros/s/AKfycbxO6lmAQfW8hLvxYqCY_9HSBIHmlNkvCykLRVDk-DbVbBX4AmGzVwP1_hPWXw6cMjc/exec';
+
+const ProfitabilityAuditDashboard = () => {
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const urlParams = new URLSearchParams(window.location.search);
-        const rowNumber = urlParams.get('row');
+        const row = urlParams.get('row');
+        const client = urlParams.get('client');
         
-        let url = 'https://script.google.com/macros/s/AKfycbxO6lmAQfW8hLvxYqCY_9HSBIHmlNkvCykLRVDk-DbVbBX4AmGzVwP1_hPWXw6cMjc/exec';
-        
-        if (rowNumber) {
-          url += `?row=${rowNumber}`;
+        let fetchUrl = API_URL;
+        if (client) {
+          fetchUrl += `?client=${client}`;
+        } else if (row) {
+          fetchUrl += `?row=${row}`;
         }
         
-        const response = await fetch(url);
-        if (!response.ok) throw new Error('Failed to fetch data');
+        const response = await fetch(fetchUrl);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         
         const result = await response.json();
         
         if (result.error) {
-          throw new Error(result.message || result.error);
+          throw new Error(result.error);
         }
         
-        // Transform API data to match original format
-        setClientData({
-          businessName: result.companyName,
-          auditDate: new Date().toLocaleDateString(),
-          revenue: result.revenue,
-          cogs: result.costs.materials,
-          operatingExpenses: result.expenses - result.costs.materials,
-          netProfit: result.netProfit,
-          profitMargin: result.currentMargin,
-          totalOpportunity: result.totalOpportunity,
-          expenses: result.expenses,
-          costs: result.costs,
-          services: result.services,
-          actions: result.actions,
-          findings: result.findings,
-          healthScore: result.healthScore
-        });
+        setData(result);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
+        console.error('Fetch error:', err);
+        setError(err.message);
       } finally {
         setLoading(false);
       }
@@ -55,27 +47,33 @@ const ProfitabilityAuditReport = () => {
     fetchData();
   }, []);
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-slate-600 text-lg">Loading your profit analysis...</p>
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600 font-medium">Loading your audit...</p>
         </div>
       </div>
     );
   }
 
-  if (error || !clientData) {
+  if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-xl p-8 max-w-md">
-          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-slate-800 mb-2 text-center">Error loading data</h2>
-          <p className="text-slate-600 text-center mb-4">{error || 'No data available'}</p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="w-8 h-8 text-red-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Error loading data</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
           <button 
             onClick={() => window.location.reload()} 
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
+            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
           >
             Try Again
           </button>
@@ -84,343 +82,397 @@ const ProfitabilityAuditReport = () => {
     );
   }
 
-  const expenseBreakdown = [
-    { 
-      category: "Labor & Payroll", 
-      amount: clientData.costs.labor, 
-      percentage: (clientData.costs.labor / clientData.operatingExpenses) * 100,
-      status: (clientData.costs.labor / clientData.operatingExpenses) > 0.45 ? "high" : "normal"
-    },
-    { 
-      category: "Marketing & Advertising", 
-      amount: clientData.costs.marketing, 
-      percentage: (clientData.costs.marketing / clientData.operatingExpenses) * 100,
-      status: "normal"
-    },
-    { 
-      category: "Rent & Utilities", 
-      amount: clientData.costs.rentUtilities, 
-      percentage: (clientData.costs.rentUtilities / clientData.operatingExpenses) * 100,
-      status: "normal"
-    },
-    { 
-      category: "Software & Subscriptions", 
-      amount: clientData.costs.software, 
-      percentage: (clientData.costs.software / clientData.operatingExpenses) * 100,
-      status: (clientData.costs.software / clientData.operatingExpenses) > 0.1 ? "warning" : "normal"
-    },
-    { 
-      category: "Other Operating Costs", 
-      amount: clientData.costs.other, 
-      percentage: (clientData.costs.other / clientData.operatingExpenses) * 100,
-      status: "normal"
-    },
-  ].filter(item => item.amount > 0);
+  const formatCurrency = (value) => {
+    if (!value && value !== 0) return '$0';
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
 
-  const serviceAnalysis = clientData.services || [];
+  const formatDate = (dateValue) => {
+    if (!dateValue) return 'N/A';
+    const date = new Date(dateValue);
+    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  };
 
-  const actionSteps = clientData.actions.map((action, idx) => ({
-    title: action.title,
-    impact: "High",
-    effort: idx === 0 ? "Low" : "Medium",
-    savings: `$${action.impact.toLocaleString()}/year`,
-    description: action.description,
-    timeframe: action.timeline
-  }));
+  // Helper function to determine cost bar color
+  const getCostBarColor = (costType, percentage) => {
+    const thresholds = {
+      labor: 20,      // >20% is bad
+      software: 5,    // >5% is bad
+      marketing: 10,  // >10% is bad
+      materials: 40,  // >40% is bad
+      rentUtilities: 15, // >15% is bad
+      other: 10       // >10% is bad
+    };
+    
+    const threshold = thresholds[costType] || 15;
+    return percentage > threshold ? 'bg-red-500' : 'bg-green-500';
+  };
+
+  const tabs = [
+    { id: 'overview', label: 'Overview', icon: BarChart3 },
+    { id: 'costs', label: 'Where Money Goes', icon: PieChart },
+    { id: 'services', label: 'Service Profitability', icon: TrendingUp },
+    { id: 'actions', label: 'Action Plan', icon: ListChecks }
+  ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200">
+      <style>{`
+        @media print {
+          .no-print { display: none !important; }
+          .print-show-all .tab-content { display: block !important; }
+          .print-show-all .page-break { page-break-before: always; }
+          body { background: white !important; }
+        }
+      `}</style>
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 print-show-all">
         {/* Header */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 mb-6">
-          <div className="flex items-start justify-between mb-6">
-            <div>
-              <h1 className="text-4xl font-bold text-slate-900 mb-2">
-                Profitability Audit Report
+        <div className="bg-white rounded-2xl shadow-md p-6 sm:p-8 mb-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="flex-1">
+              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+                Profitability Audit
               </h1>
-              <p className="text-xl text-slate-600">{clientData.businessName}</p>
-              <p className="text-sm text-slate-500 mt-2">Audit Date: {clientData.auditDate}</p>
+              <p className="text-xl text-gray-700">{data.businessName}</p>
+              <p className="text-sm text-gray-500 flex items-center gap-2 mt-1">
+                <span>📅</span>
+                {formatDate(data.auditDate)}
+              </p>
             </div>
-            <div className="text-right">
-              <div className="bg-emerald-50 border-2 border-emerald-500 rounded-xl px-6 py-4">
-                <p className="text-sm text-emerald-700 font-semibold">Net Profit Margin</p>
-                <p className="text-4xl font-bold text-emerald-600">{clientData.profitMargin.toFixed(1)}%</p>
+            <div className="flex gap-3">
+              <div className="text-right bg-green-500 px-6 py-4 rounded-xl">
+                <p className="text-xs font-semibold text-white uppercase tracking-wide mb-1">
+                  Total Opportunity
+                </p>
+                <p className="text-3xl font-bold text-white">
+                  {formatCurrency(data.totalImpact)}
+                </p>
+                <p className="text-xs text-white mt-1">per year</p>
               </div>
-            </div>
-          </div>
-
-          {/* Tab Navigation */}
-          <div className="flex gap-2 border-b border-slate-200">
-            {['overview', 'expenses', 'services', 'actions'].map((tab) => (
               <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-6 py-3 font-semibold transition-all ${
-                  activeTab === tab
-                    ? 'border-b-4 border-blue-600 text-blue-600'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
+                onClick={handlePrint}
+                className="no-print bg-blue-600 text-white px-4 py-3 rounded-xl hover:bg-blue-700 transition-colors flex items-center gap-2 h-fit"
+                title="Download PDF"
               >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                <Printer className="w-5 h-5" />
+                <span className="hidden sm:inline">Download PDF</span>
               </button>
-            ))}
+            </div>
           </div>
         </div>
 
-        {/* Overview Tab */}
-        {activeTab === 'overview' && (
-          <div className="space-y-6">
-            {/* Financial Snapshot */}
-            <div className="bg-white rounded-2xl shadow-xl p-8">
-              <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-                <PieChart className="w-6 h-6 text-blue-600" />
-                Financial Snapshot
-              </h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                <div className="bg-blue-50 rounded-xl p-6">
-                  <p className="text-sm text-blue-700 font-semibold mb-2">Total Revenue</p>
-                  <p className="text-3xl font-bold text-blue-900">
-                    ${clientData.revenue.toLocaleString()}
-                  </p>
-                </div>
-                <div className="bg-orange-50 rounded-xl p-6">
-                  <p className="text-sm text-orange-700 font-semibold mb-2">Cost of Goods Sold</p>
-                  <p className="text-3xl font-bold text-orange-900">
-                    ${clientData.cogs.toLocaleString()}
-                  </p>
-                </div>
-                <div className="bg-red-50 rounded-xl p-6">
-                  <p className="text-sm text-red-700 font-semibold mb-2">Operating Expenses</p>
-                  <p className="text-3xl font-bold text-red-900">
-                    ${clientData.operatingExpenses.toLocaleString()}
-                  </p>
-                </div>
-                <div className="bg-emerald-50 rounded-xl p-6">
-                  <p className="text-sm text-emerald-700 font-semibold mb-2">Net Profit</p>
-                  <p className="text-3xl font-bold text-emerald-900">
-                    ${clientData.netProfit.toLocaleString()}
-                  </p>
+        {/* Tabs */}
+        <div className="bg-white rounded-2xl shadow-md overflow-hidden mb-6">
+          <div className="border-b border-gray-200 no-print">
+            <div className="flex overflow-x-auto">
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex items-center gap-2 px-6 py-4 font-medium text-sm whitespace-nowrap transition-colors ${
+                      activeTab === tab.id
+                        ? 'text-white bg-blue-600'
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Overview Tab */}
+          <div className={`tab-content ${activeTab === 'overview' ? '' : 'hidden print:block'}`}>
+            <div className="p-6 sm:p-8">
+              {/* Bottom Line Up Front */}
+              <div className="bg-blue-600 rounded-2xl p-6 sm:p-8 mb-6 text-white">
+                <div className="flex items-start gap-4">
+                  <div className="bg-white/20 p-3 rounded-xl">
+                    <Target className="w-8 h-8" />
+                  </div>
+                  <div className="flex-1">
+                    <h2 className="text-2xl font-bold mb-3">Bottom Line Up Front</h2>
+                    <p className="text-lg leading-relaxed">
+                      You have <span className="font-bold text-white">{formatCurrency(data.totalImpact)}</span> in annual profit sitting on the table through {data.actions?.length || 0} fixable issues. 
+                      {data.profitMargin > 50 ? (
+                        <span> With your excellent {data.profitMargin.toFixed(1)}% margin, these strategic optimizations will unlock even more profit potential.</span>
+                      ) : data.profitMargin < 0 ? (
+                        <span> With the right moves, we can turn your business profitable and achieve a {data.targetMargin}% profit margin in 90 days.</span>
+                      ) : (
+                        <span> With the right moves, we can increase your profit margin from{' '}
+                        <span className="font-bold text-white">{data.profitMargin.toFixed(1)}%</span> to{' '}
+                        <span className="font-bold text-white">{data.targetMargin}%</span> in 90 days.</span>
+                      )}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Key Findings */}
-            <div className="bg-white rounded-2xl shadow-xl p-8">
-              <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-                <AlertCircle className="w-6 h-6 text-amber-600" />
-                Key Findings
-              </h2>
-              <div className="space-y-4">
-                {clientData.findings.map((finding, index) => {
-                  const isPositive = finding.toLowerCase().includes('excellent') || finding.toLowerCase().includes('strong');
-                  const isWarning = finding.toLowerCase().includes('critical') || finding.toLowerCase().includes('need');
+              {/* Financial Metrics Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div className="bg-white rounded-xl border border-gray-200 p-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="bg-gray-100 p-2 rounded-lg">
+                      <DollarSign className="w-5 h-5 text-gray-700" />
+                    </div>
+                    <p className="text-sm font-medium text-gray-600">Current Revenue</p>
+                  </div>
+                  <p className="text-3xl font-bold text-gray-900">{formatCurrency(data.revenue)}</p>
+                  <p className="text-xs text-gray-500 mt-1">Monthly</p>
+                </div>
+
+                <div className="bg-white rounded-xl border border-gray-200 p-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="bg-red-50 p-2 rounded-lg">
+                      <TrendingDown className="w-5 h-5 text-red-600" />
+                    </div>
+                    <p className="text-sm font-medium text-gray-600">Total Costs</p>
+                  </div>
+                  <p className="text-3xl font-bold text-gray-900">{formatCurrency(data.totalCosts)}</p>
+                  <p className="text-xs text-gray-500 mt-1">Monthly</p>
+                </div>
+
+                <div className={`rounded-xl border border-gray-200 p-6 ${
+                  data.netProfit < 0 ? 'bg-red-50' : 'bg-green-50'
+                }`}>
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className={`p-2 rounded-lg ${data.netProfit < 0 ? 'bg-red-100' : 'bg-green-100'}`}>
+                      <TrendingUp className={`w-5 h-5 ${data.netProfit < 0 ? 'text-red-600' : 'text-green-600'}`} />
+                    </div>
+                    <p className="text-sm font-medium text-gray-600">Current Profit</p>
+                  </div>
+                  <p className={`text-3xl font-bold ${data.netProfit < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                    {formatCurrency(data.netProfit)}
+                  </p>
+                  <p className={`text-sm font-semibold mt-1 ${data.netProfit < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                    {data.profitMargin.toFixed(1)}% margin
+                  </p>
+                </div>
+
+                <div className="bg-white rounded-xl border border-gray-200 p-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="bg-orange-50 p-2 rounded-lg">
+                      <Target className="w-5 h-5 text-orange-600" />
+                    </div>
+                    <p className="text-sm font-medium text-gray-600">Potential Profit</p>
+                  </div>
+                  <p className="text-3xl font-bold text-orange-600">{formatCurrency(data.netProfit + (data.totalImpact / 12))}</p>
+                  <p className="text-sm font-semibold text-orange-600 mt-1">{data.targetMargin}% margin</p>
+                </div>
+              </div>
+
+              {/* What We Found */}
+              {data.findings && data.findings.length > 0 && (
+                <div className="mb-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <AlertCircle className="w-6 h-6 text-orange-600" />
+                    <h2 className="text-xl font-bold text-gray-900">What We Found</h2>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {data.findings.map((finding, idx) => (
+                      <div 
+                        key={idx}
+                        className={`border-l-4 p-4 rounded-r-lg ${
+                          finding.type === 'success' 
+                            ? 'bg-green-50 border-green-500' 
+                            : finding.type === 'warning'
+                            ? 'bg-yellow-50 border-yellow-500'
+                            : 'bg-red-50 border-red-500'
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className={`mt-0.5 ${
+                            finding.type === 'success' ? 'text-green-600' : 
+                            finding.type === 'warning' ? 'text-yellow-600' : 'text-red-600'
+                          }`}>
+                            {finding.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="font-bold text-gray-900 mb-1">{finding.title}</h3>
+                            <p className="text-sm text-gray-700">{finding.description}</p>
+                            <p className="text-xs text-gray-600 mt-1">{finding.impact}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Where Money Goes Tab */}
+          <div className={`tab-content page-break ${activeTab === 'costs' ? '' : 'hidden print:block'}`}>
+            <div className="p-6 sm:p-8">
+              <h3 className="text-xl font-bold text-gray-900 mb-6 print:block hidden">Where Money Goes</h3>
+              <div className="space-y-3">
+                {Object.entries(data.costs).map(([key, value]) => {
+                  const percentage = data.revenue > 0 ? (value / data.revenue * 100) : 0;
+                  const barColor = getCostBarColor(key, percentage);
+                  const bgColor = barColor === 'bg-red-500' ? 'bg-red-50' : 'bg-green-50';
+                  const borderColor = barColor === 'bg-red-500' ? 'border-red-200' : 'border-green-200';
                   
                   return (
-                    <div key={index} className={`flex items-start gap-4 p-4 rounded-xl ${
-                      isPositive ? 'bg-emerald-50' : isWarning ? 'bg-amber-50' : 'bg-blue-50'
-                    }`}>
-                      {isPositive ? (
-                        <CheckCircle className="w-6 h-6 text-emerald-600 flex-shrink-0 mt-1" />
-                      ) : isWarning ? (
-                        <AlertCircle className="w-6 h-6 text-amber-600 flex-shrink-0 mt-1" />
-                      ) : (
-                        <TrendingUp className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />
-                      )}
-                      <div>
-                        <p className={`${
-                          isPositive ? 'text-emerald-800' : isWarning ? 'text-amber-800' : 'text-blue-800'
-                        }`}>
-                          {finding}
-                        </p>
+                    <div key={key} className={`${bgColor} p-4 rounded-lg border ${borderColor}`}>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-semibold text-gray-900 capitalize">
+                          {key === 'rentUtilities' ? 'Rent & Utilities' : key}
+                        </span>
+                        <span className="font-bold text-gray-900">{formatCurrency(value)}</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2.5">
+                        <div
+                          className={`${barColor} h-2.5 rounded-full transition-all`}
+                          style={{ width: `${Math.min(percentage.toFixed(1), 100)}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-gray-600 mt-1">{percentage.toFixed(1)}% of revenue</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Service Profitability Tab */}
+          <div className={`tab-content page-break ${activeTab === 'services' ? '' : 'hidden print:block'}`}>
+            <div className="p-6 sm:p-8">
+              <h3 className="text-xl font-bold text-gray-900 mb-6 print:block hidden">Service Profitability</h3>
+              <div className="space-y-4">
+                {data.services.map((service, idx) => {
+                  const cardBgColor = service.status === 'excellent' ? 'bg-green-50' : 
+                                     service.status === 'good' ? 'bg-blue-50' : 'bg-yellow-50';
+                  const cardBorderColor = service.status === 'excellent' ? 'border-green-200' : 
+                                         service.status === 'good' ? 'border-blue-200' : 'border-yellow-200';
+                  
+                  return (
+                    <div key={idx} className={`${cardBgColor} border-2 ${cardBorderColor} rounded-xl p-6`}>
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <h4 className="text-lg font-bold text-gray-900 mb-2">{service.name}</h4>
+                          <p className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
+                            service.status === 'excellent' ? 'bg-green-200 text-green-800' :
+                            service.status === 'good' ? 'bg-blue-200 text-blue-800' :
+                            'bg-yellow-200 text-yellow-800'
+                          }`}>
+                            {service.margin.toFixed(1)}% margin
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-2xl font-bold text-gray-900">{formatCurrency(service.revenue)}</p>
+                          <p className="text-sm text-gray-600">monthly revenue</p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-white p-3 rounded-lg border border-gray-200">
+                          <p className="text-xs text-gray-600 mb-1">Cost</p>
+                          <p className="text-lg font-bold text-gray-900">{formatCurrency(service.cost)}</p>
+                        </div>
+                        <div className="bg-white p-3 rounded-lg border border-gray-200">
+                          <p className="text-xs text-gray-600 mb-1">Profit</p>
+                          <p className={`text-lg font-bold ${service.revenue - service.cost >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                            {formatCurrency(service.revenue - service.cost)}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   );
                 })}
               </div>
             </div>
-
-            {/* Bottom Line Up Front */}
-            <div className="bg-gradient-to-r from-emerald-600 to-emerald-800 rounded-2xl shadow-xl p-8 text-white">
-              <h2 className="text-3xl font-bold mb-4">Bottom Line Up Front</h2>
-              <p className="text-lg mb-2 opacity-90">
-                You have <span className="font-bold text-2xl">${clientData.totalOpportunity.toLocaleString()}</span> in annual profit sitting on the table through {actionSteps.length} fixable issues.
-              </p>
-              <p className="text-lg opacity-90">
-                With your {clientData.profitMargin >= 0 ? 'current' : 'challenged'} {Math.abs(clientData.profitMargin).toFixed(1)}% margin, these strategic optimizations will unlock significant profit potential.
-              </p>
-            </div>
           </div>
-        )}
 
-        {/* Expenses Tab */}
-        {activeTab === 'expenses' && (
-          <div className="bg-white rounded-2xl shadow-xl p-8">
-            <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-              <PieChart className="w-6 h-6 text-blue-600" />
-              Expense Breakdown
-            </h2>
-            <div className="space-y-6">
-              {expenseBreakdown.map((expense, idx) => (
-                <div key={idx} className="border-2 border-slate-200 rounded-xl p-6">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-lg font-bold text-slate-900">{expense.category}</h3>
-                    <div className="text-right">
-                      <p className="text-2xl font-bold text-slate-900">
-                        ${expense.amount.toLocaleString()}
-                      </p>
-                      <p className="text-sm text-slate-600">{expense.percentage.toFixed(1)}% of total</p>
-                    </div>
-                  </div>
-                  <div className="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
-                    <div
-                      className={`h-full rounded-full ${
-                        expense.status === 'high' ? 'bg-red-500' :
-                        expense.status === 'warning' ? 'bg-amber-500' :
-                        'bg-emerald-500'
-                      }`}
-                      style={{ width: `${Math.min(expense.percentage, 100)}%` }}
-                    />
-                  </div>
-                  {expense.status === 'high' && (
-                    <p className="mt-3 text-sm text-red-700 font-semibold">
-                      ⚠️ Above industry benchmark - optimization recommended
-                    </p>
-                  )}
-                  {expense.status === 'warning' && (
-                    <p className="mt-3 text-sm text-amber-700 font-semibold">
-                      💡 Review for potential redundancy or consolidation
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Services Tab */}
-        {activeTab === 'services' && (
-          <div className="bg-white rounded-2xl shadow-xl p-8">
-            <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-              <TrendingUp className="w-6 h-6 text-emerald-600" />
-              Service Profitability Analysis
-            </h2>
-            <div className="space-y-4">
-              {serviceAnalysis.map((service, idx) => (
-                <div key={idx} className="border-2 border-slate-200 rounded-xl p-6 hover:border-blue-400 transition-all">
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h3 className="text-xl font-bold text-slate-900 mb-2">{service.name}</h3>
-                      <div className="flex gap-6 text-sm">
-                        <span className="text-slate-600">
-                          Revenue: <span className="font-bold text-slate-900">${service.revenue.toLocaleString()}</span>
-                        </span>
-                        <span className="text-slate-600">
-                          Cost: <span className="font-bold text-slate-900">${service.cost.toLocaleString()}</span>
-                        </span>
-                        <span className="text-slate-600">
-                          Profit: <span className="font-bold text-emerald-600">${(service.revenue - service.cost).toLocaleString()}</span>
-                        </span>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className={`inline-block px-4 py-2 rounded-lg font-bold ${
-                        service.status === 'excellent' ? 'bg-emerald-100 text-emerald-700' :
-                        'bg-blue-100 text-blue-700'
-                      }`}>
-                        {service.margin.toFixed(1)}% Margin
-                      </div>
-                    </div>
-                  </div>
-                  <div className="w-full bg-slate-200 rounded-full h-4 overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-full"
-                      style={{ width: `${Math.min(service.margin, 100)}%` }}
-                    />
-                  </div>
-                  {service.status === 'excellent' && (
-                    <p className="mt-3 text-sm text-emerald-700 font-semibold">
-                      ⭐ High-margin service - consider pricing increase or expansion
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Actions Tab */}
-        {activeTab === 'actions' && (
-          <div className="space-y-6">
-            <div className="bg-white rounded-2xl shadow-xl p-8">
-              <h2 className="text-2xl font-bold text-slate-900 mb-2 flex items-center gap-2">
-                <Target className="w-6 h-6 text-blue-600" />
-                Your 3-Step Profit Action Plan
-              </h2>
-              <p className="text-slate-600 mb-6">Implement these steps in order for maximum impact</p>
+          {/* Action Plan Tab */}
+          <div className={`tab-content page-break ${activeTab === 'actions' ? '' : 'hidden print:block'}`}>
+            <div className="p-6 sm:p-8">
+              <h3 className="text-xl font-bold text-gray-900 mb-6 print:block hidden">Action Plan</h3>
               
+              <div className="bg-green-50 border-2 border-green-200 rounded-xl p-6 mb-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-bold text-green-900 mb-1">Total Opportunity</h3>
+                    <p className="text-sm text-green-700">Combined annual impact of all recommended actions</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-4xl font-bold text-green-700">{formatCurrency(data.totalImpact)}</p>
+                    <p className="text-sm text-green-600 mt-1">per year</p>
+                  </div>
+                </div>
+              </div>
+
               <div className="space-y-6">
-                {actionSteps.map((step, idx) => (
-                  <div key={idx} className="border-2 border-blue-200 rounded-xl p-6 bg-gradient-to-r from-blue-50 to-white">
-                    <div className="flex items-start gap-4">
-                      <div className="bg-blue-600 text-white w-12 h-12 rounded-full flex items-center justify-center font-bold text-xl flex-shrink-0">
-                        {idx + 1}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between mb-3">
-                          <h3 className="text-xl font-bold text-slate-900">{step.title}</h3>
-                          <div className="flex gap-2">
-                            <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold">
-                              {step.impact} Impact
+                {data.actions && data.actions.length > 0 ? (
+                  data.actions.map((action, idx) => (
+                    <div key={idx} className="border-2 border-gray-200 rounded-xl p-6">
+                      <div className="flex items-start gap-4 mb-4">
+                        <div className="bg-blue-600 text-white w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg flex-shrink-0">
+                          {action.step}
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="text-xl font-bold text-gray-900 mb-3">{action.title}</h4>
+                          <div className="flex flex-wrap gap-3 mb-4">
+                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                              action.effort === 'Low' ? 'bg-green-100 text-green-700' :
+                              action.effort === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
+                              'bg-red-100 text-red-700'
+                            }`}>
+                              {action.effort} Effort
                             </span>
-                            <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold">
-                              {step.effort} Effort
+                            <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+                              {action.timeframe}
+                            </span>
+                            <span className="px-4 py-1 bg-green-600 text-white rounded-full text-sm font-bold">
+                              {action.savings}
                             </span>
                           </div>
                         </div>
-                        <p className="text-slate-700 mb-3">{step.description}</p>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-slate-600">
-                            ⏰ Timeframe: <span className="font-bold">{step.timeframe}</span>
-                          </span>
-                          <span className="text-lg font-bold text-emerald-600">
-                            💰 {step.savings}
-                          </span>
-                        </div>
                       </div>
+                      
+                      {action.implementation && action.implementation.length > 0 && (
+                        <div className="bg-gray-50 rounded-lg p-4 mt-4">
+                          <p className="font-semibold text-gray-900 mb-3">Implementation Steps:</p>
+                          <div className="space-y-2">
+                            {action.implementation.map((step, stepIdx) => (
+                              <div key={stepIdx} className="flex items-start gap-3">
+                                <div className="bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">
+                                  {stepIdx + 1}
+                                </div>
+                                <p className="text-gray-700 flex-1">{step}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
+                  ))
+                ) : (
+                  <div className="text-center py-12 text-gray-500">
+                    <p>No action items available. Run the AI recommendation generator to create personalized actions.</p>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Total Impact */}
-            <div className="bg-gradient-to-r from-emerald-600 to-emerald-800 rounded-2xl shadow-xl p-8 text-white">
-              <h2 className="text-2xl font-bold mb-4">Total Annual Impact</h2>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-lg opacity-90 mb-2">By implementing all three action steps:</p>
-                  <ul className="space-y-1 text-sm opacity-90">
-                    {clientData.actions.map((action, idx) => (
-                      <li key={idx}>✓ {action.title}</li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="text-right">
-                  <p className="text-lg opacity-90">Additional Annual Profit</p>
-                  <p className="text-5xl font-bold">${clientData.totalOpportunity.toLocaleString()}</p>
-                </div>
+                )}
               </div>
             </div>
           </div>
-        )}
+        </div>
 
         {/* Footer */}
-        <div className="mt-8 text-center text-slate-600">
-          <p className="text-sm">
-            Questions about your audit? Schedule your follow-up review call to dive deeper into these findings.
+        <div className="bg-white rounded-2xl shadow-md p-6 text-center">
+          <p className="text-gray-600">
+            This audit was prepared by <span className="font-bold text-gray-900">Flexpoint Bookkeeping</span>
           </p>
-          <p className="text-xs mt-2 text-slate-500">
-            Prepared by Flexpoint Partnership | Confidential Business Analysis
+          <p className="text-sm text-gray-500 mt-2">
+            For questions or to schedule a follow-up consultation, visit book.flexpointbookkeeping.com
           </p>
         </div>
       </div>
@@ -428,4 +480,4 @@ const ProfitabilityAuditReport = () => {
   );
 };
 
-export default ProfitabilityAuditReport;
+export default ProfitabilityAuditDashboard;
