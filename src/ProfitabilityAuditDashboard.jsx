@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DollarSign, TrendingDown, TrendingUp, Target, AlertCircle, CheckCircle2, Printer, BarChart3, PieChart, ListChecks } from 'lucide-react';
 
-const API_URL = 'https://docs.google.com/spreadsheets/d/1ucWx1DVYRyw9ywTIJAs2J8vYtEnHkbpJYYFXpnn580o/edit?usp=sharing';
+const API_URL = 'https://script.google.com/macros/s/AKfycbxO6lmAQfW8hLvxYqCY_9HSBIHmlNkvCykLRVDk-DbVbBX4AmGzVwP1_hPWXw6cMjc/exec';
 
 const ProfitabilityAuditDashboard = () => {
   const [data, setData] = useState(null);
