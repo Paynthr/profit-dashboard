@@ -217,10 +217,12 @@ const ProfitabilityAuditDashboard = () => {
                         (() => {
                           const currentProfit = data.revenue - data.totalCosts;
                           const monthlyOpportunity = data.totalImpact / 12;
-                          const potentialProfit = currentProfit + monthlyOpportunity;
+                          const potentialProfit = Math.max(0, currentProfit + monthlyOpportunity);
                           const potentialRevenue = data.revenue + (monthlyOpportunity * 0.5);
-                          const potentialMargin = potentialRevenue > 0 ? ((potentialProfit / potentialRevenue) * 100) : 0;
-                          return Math.min(potentialMargin, 99).toFixed(0);
+                          const potentialMargin = potentialProfit > 0 && potentialRevenue > 0 
+                            ? Math.min(((potentialProfit / potentialRevenue) * 100), 99) 
+                            : 0;
+                          return potentialMargin.toFixed(0);
                         })()
                       }% profit margin in 90 days.
                     </p>
@@ -282,13 +284,21 @@ const ProfitabilityAuditDashboard = () => {
                   );
                 })()}
 
-                {/* Potential Profit - Fixed Calculation */}
+                {/* Potential Profit - Fixed to Never Show Negative */}
                 {(() => {
                   const currentProfit = data.revenue - data.totalCosts;
                   const monthlyOpportunity = data.totalImpact / 12;
-                  const potentialProfit = currentProfit + monthlyOpportunity;
+                  
+                  // Potential profit should never be negative
+                  const potentialProfit = Math.max(0, currentProfit + monthlyOpportunity);
+                  
+                  // Calculate potential revenue (assuming 50% from growth, 50% from cost reduction)
                   const potentialRevenue = data.revenue + (monthlyOpportunity * 0.5);
-                  const potentialMargin = potentialRevenue > 0 ? ((potentialProfit / potentialRevenue) * 100) : 0;
+                  
+                  // Calculate margin - if profit is 0, margin is 0
+                  const potentialMargin = potentialProfit > 0 && potentialRevenue > 0 
+                    ? Math.min(((potentialProfit / potentialRevenue) * 100), 99) 
+                    : 0;
                   
                   return (
                     <div className="bg-green-50 border-2 border-green-200 rounded-xl p-6">
@@ -302,7 +312,7 @@ const ProfitabilityAuditDashboard = () => {
                         {formatCurrency(potentialProfit)}
                       </p>
                       <p className="text-sm text-green-600 font-medium">
-                        {Math.min(potentialMargin, 99).toFixed(0)}% margin
+                        {potentialMargin.toFixed(0)}% margin
                       </p>
                     </div>
                   );
