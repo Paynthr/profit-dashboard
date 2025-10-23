@@ -47,14 +47,11 @@ export default function ProfitDashboard() {
     const fetchData = async () => {
       try {
         const urlParams = new URLSearchParams(window.location.search);
-        const clientId = urlParams.get('client');
         const rowNumber = urlParams.get('row');
         
-        let url = 'https://script.google.com/macros/s/AKfycbwyA-59kaSfqKqJq3SjQBPIW7y5xNDvI31FT-bXs_GU9GbTx0ZKPB1rBaZ1mnIJ0zMV/exec';
+        let url = 'https://script.google.com/macros/s/AKfycbxO6lmAQfW8hLvxYqCY_9HSBIHmlNkvCykLRVDk-DbVbBX4AmGzVwP1_hPWXw6cMjc/exec';
         
-        if (clientId) {
-          url += `?client=${clientId}`;
-        } else if (rowNumber) {
+        if (rowNumber) {
           url += `?row=${rowNumber}`;
         }
         
@@ -62,6 +59,12 @@ export default function ProfitDashboard() {
         if (!response.ok) throw new Error('Failed to fetch data');
         
         const result = await response.json();
+        
+        // Check if the result contains an error
+        if (result.error) {
+          throw new Error(result.message || result.error);
+        }
+        
         setData(result);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
@@ -102,8 +105,14 @@ export default function ProfitDashboard() {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
         <div className="bg-white rounded-lg shadow-xl p-8 max-w-md">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-slate-800 mb-2 text-center">Unable to Load Data</h2>
-          <p className="text-slate-600 text-center">{error || 'No data available'}</p>
+          <h2 className="text-2xl font-bold text-slate-800 mb-2 text-center">Error loading data</h2>
+          <p className="text-slate-600 text-center mb-4">{error || 'No data available'}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
+          >
+            Try Again
+          </button>
         </div>
       </div>
     );
@@ -113,6 +122,12 @@ export default function ProfitDashboard() {
     if (score >= 80) return 'text-green-600';
     if (score >= 60) return 'text-yellow-600';
     return 'text-red-600';
+  };
+
+  const getHealthBgColor = (score: number) => {
+    if (score >= 80) return 'bg-green-600';
+    if (score >= 60) return 'bg-yellow-600';
+    return 'bg-red-600';
   };
 
   const getHealthLabel = (score: number) => {
@@ -221,10 +236,7 @@ export default function ProfitDashboard() {
             </div>
             <div className="w-full bg-slate-200 rounded-full h-4">
               <div 
-                className={`h-4 rounded-full transition-all duration-1000 ${
-                  data.healthScore >= 80 ? 'bg-green-600' : 
-                  data.healthScore >= 60 ? 'bg-yellow-600' : 'bg-red-600'
-                }`}
+                className={`h-4 rounded-full transition-all duration-1000 ${getHealthBgColor(data.healthScore)}`}
                 style={{ width: `${data.healthScore}%` }}
               ></div>
             </div>
@@ -294,45 +306,47 @@ export default function ProfitDashboard() {
         )}
 
         {/* Action Plan */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h3 className="text-2xl font-bold text-slate-800 mb-2">Your 3-Step Action Plan</h3>
-          <p className="text-slate-600 mb-6">Start implementing these changes this month to unlock {formatCurrency(data.totalOpportunity)} in annual profit</p>
-          
-          <div className="space-y-6">
-            {data.actions.map((action, index) => (
-              <div key={index} className="border-l-4 border-blue-600 bg-blue-50 rounded-r-lg p-6">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-start gap-4">
-                    <div className="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold flex-shrink-0">
-                      {index + 1}
-                    </div>
-                    <div>
-                      <h4 className="text-xl font-bold text-slate-800 mb-2">{action.title}</h4>
-                      <p className="text-slate-700 mb-3">{action.description}</p>
-                      <div className="flex items-center gap-4 text-sm">
-                        <span className="text-slate-600">Timeline: <strong>{action.timeline}</strong></span>
+        {data.actions.length > 0 && (
+          <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h3 className="text-2xl font-bold text-slate-800 mb-2">Your 3-Step Action Plan</h3>
+            <p className="text-slate-600 mb-6">Start implementing these changes this month to unlock {formatCurrency(data.totalOpportunity)} in annual profit</p>
+            
+            <div className="space-y-6">
+              {data.actions.map((action, index) => (
+                <div key={index} className="border-l-4 border-blue-600 bg-blue-50 rounded-r-lg p-6">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-start gap-4">
+                      <div className="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold flex-shrink-0">
+                        {index + 1}
+                      </div>
+                      <div>
+                        <h4 className="text-xl font-bold text-slate-800 mb-2">{action.title}</h4>
+                        <p className="text-slate-700 mb-3">{action.description}</p>
+                        <div className="flex items-center gap-4 text-sm">
+                          <span className="text-slate-600">Timeline: <strong>{action.timeline}</strong></span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="text-right flex-shrink-0">
-                    <p className="text-sm text-slate-600 mb-1">Annual Impact</p>
-                    <p className="text-2xl font-bold text-green-600">{formatCurrency(action.impact)}</p>
+                    <div className="text-right flex-shrink-0 ml-4">
+                      <p className="text-sm text-slate-600 mb-1">Annual Impact</p>
+                      <p className="text-2xl font-bold text-green-600">{formatCurrency(action.impact)}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
 
-          <div className="mt-8 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg p-6 text-white">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-lg font-semibold mb-1">Total Annual Opportunity</p>
-                <p className="text-sm opacity-90">Combined impact of all action steps</p>
+            <div className="mt-8 bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg p-6 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-lg font-semibold mb-1">Total Annual Opportunity</p>
+                  <p className="text-sm opacity-90">Combined impact of all action steps</p>
+                </div>
+                <p className="text-4xl font-bold">{formatCurrency(data.totalOpportunity)}</p>
               </div>
-              <p className="text-4xl font-bold">{formatCurrency(data.totalOpportunity)}</p>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Footer */}
         <div className="bg-slate-800 rounded-lg shadow-md p-8 text-center">
